@@ -1,0 +1,120 @@
+How many Customers do we have in the data?
+
+select count(customer_name) FROM customers
+
+--
+
+What was the city with the most profit for the company in 2015 and how much was it?
+
+SELECT shipping_city, SUM(order_profits) AS profits
+FROM orders o
+JOIN order_details od
+ON o.order_id = od.order_id
+WHERE substr(o.order_date,-4,4) = '2015'
+GROUP BY 1
+ORDER BY 2 DESC
+
+--
+
+How many different cities do we have in the data?
+
+SELECT DISTINCT shipping_city FROM orders
+(number of rows)
+
+--
+
+What is the most profitable City in the State of Tennessee?
+
+SELECT o.shipping_city, SUM(od.order_profits)
+FROM orders o
+join order_details od
+on o.order_id = od.order_id
+WHERE o.shipping_state = 'Tennessee'
+GROUP BY 1
+ORDER BY 2 DESC
+
+--
+
+What’s the average annual profit for that city across all years in that city?
+
+SELECT avg(od.order_profits), o.shipping_city
+FROM order_details od
+JOIN orders o
+on o.order_id = od.order_id
+where shipping_city = 'Lebanon'
+
+--
+
+What is the distribution of customer types in the data?
+
+SELECT customer_segment, count(*)
+FROM customers
+GROUP BY customer_segment
+
+--
+
+What’s the most profitable product category on average in Iowa across all years?
+
+SELECT p.product_category, o.shipping_state, AVG(od.order_profits)
+FROM product p
+JOIN order_details od 
+on od.product_id = p.product_id
+join orders o
+on o.order_id = od.order_id
+WHERE o.shipping_state = "Iowa"
+group by 1, 2
+order by 3 DESC
+
+--
+
+What is the most popular product in the furniture category across all states in 2016?
+
+SELECT  od.order_profits profit, sum(quantity) total_sold, product_name
+FROM orders o
+JOIN order_details od 
+on o.order_id  = od.order_id
+JOIN product  p 
+on od.product_id = p.product_id
+WHERE product_category = 'Furniture' AND substr(o.order_date,-4,4) = '2016'
+GROUP BY product_name
+Order by total_sold DESC
+LIMIT 1
+
+--
+
+Which customer got the most discount in the data? (in total amount)
+SELECT o.customer_id
+    , SUM((order_sales / (1 - od.order_discount)) - order_sales) total_discounts
+FROM orders o
+JOIN order_details od
+ON od.order_id = o.order_id
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 1
+
+--
+
+Which order was the highest in 2015?
+with sales_order as
+	(SELECT o.order_id, od.order_sales
+	FROM order_details od
+	JOIN orders o
+	on o.order_id = od.order_id
+	where substr(o.order_date,-4,4) = '2015'
+	)
+	
+SELECT max(order_sales)
+FROM sales_order
+
+--
+
+What was the rank of each city in the East region in 2015?
+SELECT o.shipping_city,
+	Rank () OVER (ORDER BY sum(od.quantity) DESC) AS Rank_num
+FROM orders o
+JOIN order_details od
+ON o.order_id = od.order_id
+WHERE  substr(o.order_date,-4,4) = '2015'
+	AND o.shipping_region = 'East'
+GROUP BY o.shipping_city
+ORDER BY sum(od.quantity) DESC
